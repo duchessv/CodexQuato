@@ -263,14 +263,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
         )
     }
 
-    private func color(for percent: Int) -> NSColor {
-        switch QuotaPresentation.colorBand(for: percent) {
-        case .healthy:
-            return .systemGreen
-        case .warning:
-            return .systemOrange
-        case .critical:
-            return .systemRed
-        }
-    }
+private func color(for percent: Int) -> NSColor {
+    return .labelColor
+}
 }
