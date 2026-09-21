@@ -1,0 +1,68 @@
+name: Build Intel CodexQuota
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-intel:
+    name: Build x86_64 macOS App
+    runs-on: macos-15-intel
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Show build environment
+        run: |
+          echo "CPU architecture:"
+          uname -m
+          echo
+          echo "Swift:"
+          swift --version
+          echo
+          echo "Xcode:"
+          xcodebuild -version
+
+      - name: Run tests
+        run: swift test
+
+      - name: Build CodexQuota app
+        run: |
+          chmod +x Scripts/package_app.sh
+          ./Scripts/package_app.sh
+
+      - name: Verify Intel architecture
+        run: |
+          rm -rf /tmp/CodexQuotaCheck
+          mkdir -p /tmp/CodexQuotaCheck
+
+          ditto -x -k \
+            outputs/CodexQuota.app.zip \
+            /tmp/CodexQuotaCheck
+
+          echo "Executable information:"
+          file /tmp/CodexQuotaCheck/CodexQuota.app/Contents/MacOS/CodexQuota
+
+          echo
+          echo "Architectures:"
+          lipo -archs /tmp/CodexQuotaCheck/CodexQuota.app/Contents/MacOS/CodexQuota
+
+          ARCHS="$(lipo -archs /tmp/CodexQuotaCheck/CodexQuota.app/Contents/MacOS/CodexQuota)"
+
+          if [[ "$ARCHS" != *"x86_64"* ]]; then
+            echo "ERROR: x86_64 architecture not found."
+            exit 1
+          fi
+
+          echo "Intel x86_64 verification passed."
+
+      - name: Upload Intel app
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodexQuota-Intel-x86_64
+          path: outputs/CodexQuota.app.zip
+          if-no-files-found: error
+          retention-days: 14
